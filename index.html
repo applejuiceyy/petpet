@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+                margin: 0;
+                height: 100vh;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: black;
+                    color: white;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <noscript>
+            Javascript needs to be enabled
+        </noscript>
+        <input style="display: none;" type="file" id="pet-file">
+        <img style="display: none; transform-origin: 50% 100%;" id="pet-img">
+
+        <script>
+            let petEl = document.getElementById("pet-file");
+            let petImg = document.getElementById("pet-img");
+
+            petEl.style.display = "block";
+
+            petEl.addEventListener("change", (ev) => {
+                let file = petEl.files[0];
+
+                petImg.src = URL.createObjectURL(file);
+
+                petImg.style.display = "block";
+                petEl.style.display = "none";
+
+                tick();
+            })
+
+            let currentScale = 1;
+            let scaleMomentum = 0;
+
+            let mouseInImage = false;
+            let rawMousePos = [0, 0];
+
+            let disableTimeout;
+
+            function tick() {
+                let scale = Math.min(window.innerWidth / petImg.width, window.innerHeight / petImg.height) / 2 / 2;
+                let time = new Date().getTime();
+
+                let targetScale = 1 + Math.cos(time / 600) / 50;
+                let sway = 0;
+
+                scaleMomentum += targetScale - currentScale;
+                scaleMomentum *= 0.9;
+                currentScale += scaleMomentum / 20;
+
+                if (mouseInImage) {
+                    let bounds = petImg.getBoundingClientRect();
+
+                    let normalisedY = -(rawMousePos[1] - bounds.bottom);
+
+                    if (normalisedY > 0) {
+
+                        let scaledY = normalisedY / (petImg.height * scale);
+                        console.log(scaledY);
+
+                        scaleMomentum += (currentScale - scaledY) / 2;
+                    }
+
+                    let normalisedX = rawMousePos[0] - window.innerWidth / 2;
+
+                    sway = normalisedX / 10;
+                }
+
+                petImg.style.transform = `translate(${sway}px, 0) scale(${currentScale * scale}, ${1 / currentScale * scale})`;
+
+                requestAnimationFrame(tick);
+            }
+
+            petImg.addEventListener("click", () => {
+                currentScale += Math.random() > 0.5 ? 0.4 : -0.4;
+            })
+
+            petImg.addEventListener("mouseenter", () => {
+                clearTimeout(disableTimeout);
+                mouseInImage = true;
+            })
+
+            petImg.addEventListener("mouseleave", () => {
+                disableTimeout = setTimeout(() => mouseInImage = false, 10);
+            })
+
+            document.addEventListener("mousemove", (ev) => {
+                rawMousePos = [ev.clientX, ev.clientY];
+            })
+        </script>
+    </body>
+</html>
